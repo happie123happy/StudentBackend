@@ -27,11 +27,18 @@ export const getAllCourses = async (req, res, next) => {
     //   ],
     // });
 
-    const course = await Course.find({ status: "published" }).populate({
-      path: "instId",
-      model: "Instructor",
-      select: ["profile.firstname", "profile.bio", "profile.address.country"],
-    });
+    const course = await Course.find({ status: "published" })
+      .populate({
+        path: "instId",
+        model: "Instructor",
+        select: ["profile.firstname", "profile.bio", "profile.address.country"],
+      })
+      .select([
+        "-dummyOutline",
+        "-outline.courseStructure",
+        "-outline.courseDescription",
+        "-outline.courseObjective"
+      ]);
 
     res.json(course);
   } catch (error) {
@@ -51,10 +58,12 @@ export const getCourseDetails = async (req, res, next) => {
         {
           path: "subModules",
           model: "SubModule",
+          select:"name"
         },
         {
           path: "quizId",
           model: "Quiz",
+          select:"name"
         },
       ],
     });
@@ -97,7 +106,7 @@ export const deleteCourse = async (req, res, next) => {
 export const getCourse = async (req, res, next) => {
   try {
     const course = await Course.findOne({
-      _id: req.params.courseId,
+      _id: req.params.courseId
     }).populate({
       path: "instId",
       model: "Instructor",

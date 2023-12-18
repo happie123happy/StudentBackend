@@ -30,7 +30,7 @@ router.post("/registercourse", registerCourse);
 
 
 // get full course
-router.get("/:courseId", getCourse);
+router.get("/course/:courseId", getCourse);
 
 
 
