@@ -191,6 +191,7 @@ const publishSchema = new Schema({
   courseId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Course",
+    unique:true,
     required: true,
   },
 });

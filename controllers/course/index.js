@@ -7,9 +7,10 @@ import {
   Quiz,
   SubModule,
 } from "../../models/course/index.js";
-import { Instructor,Student } from "../../models/student/index.js";
+import { Instructor, Student } from "../../models/student/index.js";
+import { ktLogic } from "../student/index.js";
 
-export const getAllCourses = async (req, res, next) => {
+export const displayAllCourses = async (req, res, next) => {
   try {
     // const course = await Course.find({ status: "published" }).populate({
     //   path: "outline.courseStructure",
@@ -37,7 +38,7 @@ export const getAllCourses = async (req, res, next) => {
         "-dummyOutline",
         "-outline.courseStructure",
         "-outline.courseDescription",
-        "-outline.courseObjective"
+        "-outline.courseObjective",
       ]);
 
     res.json(course);
@@ -52,39 +53,86 @@ export const getCourseDetails = async (req, res, next) => {
       _id: req.params.courseId,
     });
 
-    const pcourse = await course.outline.populate({
-      path: "courseStructure",
-      populate: [
-        {
-          path: "subModules",
-          model: "SubModule",
-          select:"name"
-        },
-        {
-          path: "quizId",
-          model: "Quiz",
-          select:"name"
-        },
-      ],
-    });
+    if (!course) {
+      return next(new ErrorResponse("Course not found", 404));
+    }
+
+    // const pcourse = await course.outline.populate({
+    //   path: "courseStructure",
+    //   populate: [
+    //     {
+    //       path: "subModules",
+    //       model: "SubModule",
+    //       select:"name"
+    //     },
+    //     {
+    //       path: "quizId",
+    //       model: "Quiz",
+    //       select:"name"
+    //     },
+    //   ],
+    // });
 
     // console.log(pcourse);
-    res.json({ status: "success", data: pcourse });
+    res.json({ status: "success", data: JSON.parse(course.dummyOutline) });
   } catch (error) {
     next(error);
   }
 };
 
+// dashboard of courses after login
+export const getAllCourses = async (req, res, next) => {
+  try {
+    const user = await Student.findById(req.user.id);
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
 
+    const course = await Course.find({ status: "published" })
+      .populate({
+        path: "instId",
+        model: "Instructor",
+        select: ["profile.firstname", "profile.bio", "profile.address.country"],
+      })
+      .select([
+        "-dummyOutline",
+        "-outline.courseStructure",
+        "-outline.courseDescription",
+        "-outline.courseObjective",
+      ]);
 
+    let accessData = {};
 
+    for (const mod of course) {
+      accessData[mod._id] = {
+        isRegistered: false,
+        data: {
+          outline: mod.outline,
+          target: mod.target,
+          duration: mod.duration,
+          courseOn: mod.courseOn,
+        },
+      };
+    }
 
+    for (const mod of user.courses) {
+      const d = accessData[mod.course];
+      accessData[mod.course] = {
+        isRegistered: true,
+        data: {
+          outline: d.data.outline,
+          target: d.data.target,
+          duration: d.data.duration,
+          courseOn: d.data.courseOn,
+        },
+      };
+    }
 
-
-
-
-
-
+    res.json({ status: "success", data: accessData });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const deleteCourse = async (req, res, next) => {
   const { courseId } = req.body;
@@ -92,9 +140,9 @@ export const deleteCourse = async (req, res, next) => {
   try {
     const stud = await Student.findById(req.user.id);
     if (!stud) {
-        return next(new ErrorResponse("Student not found", 404));
+      return next(new ErrorResponse("Student not found", 404));
     }
-    
+
     const course = await Course.deleteOne({ _id: courseId });
 
     res.json(course);
@@ -103,15 +151,196 @@ export const deleteCourse = async (req, res, next) => {
   }
 };
 
+// get registered courses
+export const getCourses = async (req, res, next) => {
+  try {
+    const user = await Student.findById(req.user.id);
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+    const courses = await user.populate({
+      path: "courses",
+      model: "Course",
+      populate: {
+        path: "course",
+        model: "Course",
+        select: [
+          "-dummyOutline",
+          "-outline.courseDescription",
+          "-outline.courseStructure",
+          "-outline.courseObjective",
+        ],
+        populate: {
+          path: "instId",
+          model: "Instructor",
+          select: [
+            "profile.firstname",
+            "profile.bio",
+            "profile.address.country",
+          ],
+        },
+      },
+    });
+    console.log("get courses successful");
+    res.json({ status: "success", data: courses.courses });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const registerCourse = async (req, res, next) => {
+  const { courseId } = req.body;
+  try {
+    const user = await Student.findById(req.user.id);
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    const alreadyRegistered = user.courses.find(
+      (item) => item.course == courseId
+    );
+    if (alreadyRegistered) {
+      return next(new ErrorResponse("Already Registered", 404));
+    }
+
+    const course = await Course.findById(courseId).select(
+      "outline.courseStructure"
+    );
+    if (!course) {
+      return next(new ErrorResponse("Course not found", 404));
+    }
+
+    const accessMod = course.outline.courseStructure.map((item, index) => {
+      if (index == 0) {
+        return {
+          moduleId: item,
+          access: true,
+        };
+      } else {
+        return {
+          moduleId: item,
+          access: false,
+        };
+      }
+    });
+
+    user.courses.push({ course: courseId, modules: accessMod });
+    await user.save();
+
+    res.json({ status: "success", courseId: courseId, data: accessMod });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCourseContent = async (req, res, next) => {
+  const { subModuleId, moduleId } = req.body;
+  try {
+    const user = await Student.findById(req.user.id);
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    const access = user.courses.find(
+      (item) => item.course == req.params.courseId
+    );
+
+    if (!access) {
+      return next(new ErrorResponse("unauthorized to access course", 404));
+    }
+
+    let accMod = access.modules.find(
+      (item) => item.access && item.moduleId == moduleId
+    );
+    console.log(accMod);
+    if (!accMod) {
+      return next(new ErrorResponse("No Access or Invalid Module", 404));
+    }
+
+    if (accMod.level == "easy") {
+      accMod = accMod.level;
+    }
+    else if (accMod.level == "medium") {
+      accMod = "easy medium";
+    }
+    else {
+      accMod = "easy medium hard";
+    }
+
+    const submodule = await SubModule.findOne({_id:subModuleId,moduleId:moduleId}).select(accMod);
+
+    if (!submodule) {
+      return next(new ErrorResponse("content not found", 404));
+    }
+
+    // console.log(pcourse);
+    res.json({ status: "success", data: submodule });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getCourse = async (req, res, next) => {
   try {
+    const user = await Student.findById(req.user.id);
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    const access = user.courses.find(
+      (item) => item.course == req.params.courseId
+    );
+
+    if (!access) {
+      return next(new ErrorResponse("unauthorized to access course", 404));
+    }
+
+    let accMod = access.modules.filter((item) => item.access);
+    accMod = accMod.map((item) => ({
+      moduleId: item.moduleId,
+      level: item.level, // Get the level associated with each module
+    }));
+
+    console.log(accMod);
+    // const accLevel = 0;
+
     const course = await Course.findOne({
-      _id: req.params.courseId
-    }).populate({
-      path: "instId",
-      model: "Instructor",
-      select: ["profile.firstname", "profile.bio", "profile.address.country"],
-    });
+      _id: req.params.courseId,
+    })
+      .populate([
+        {
+          path: "instId",
+          model: "Instructor",
+          select: [
+            "profile.firstname",
+            "profile.bio",
+            "profile.address.country",
+          ],
+        },
+        {
+          path: "outline.courseStructure",
+          model: "Module",
+          match: { _id: { $in: accMod.map((item) => item.moduleId) } },
+
+          populate: [
+            {
+              path: "subModules",
+              module: "SubModule",
+              select: ["name"],
+            },
+            {
+              path: "quizId",
+              module: "Quiz",
+              select: ["name"],
+            },
+          ],
+        },
+      ])
+      .select(["-dummyOutline"]);
+
+    if (!course) {
+      return next(new ErrorResponse("Course not found", 404));
+    }
 
     // console.log(pcourse);
     res.json(course);
@@ -120,15 +349,29 @@ export const getCourse = async (req, res, next) => {
   }
 };
 
-export const getCourses = async (req, res, next) => {
+export const getKt = async (req, res, next) => {
   try {
     const user = await Student.findById(req.user.id);
     if (!user) {
       return next(new ErrorResponse("User not found", 404));
     }
-    const courses = await user.populate({ path: "courses", model: "Course" });
-    console.log("get courses successful");
-    res.json({status:"success",data:courses.courses});
+
+    const course = await Course.findOne({
+      $and: [{ _id: req.params.courseId }, { kt: { $exists: true } }],
+    })
+      .populate({
+        path: "kt",
+        model: "KT",
+        select: "-easy.correctOption -medium.correctOption -hard.correctOption",
+      })
+      .select(["kt"]);
+    
+    if (!course) {
+      return next(new ErrorResponse("Knowledge Test/Course Not Found", 404));
+    }
+
+    // console.log(pcourse);
+    res.json(course);
   } catch (error) {
     next(error);
   }
@@ -136,20 +379,137 @@ export const getCourses = async (req, res, next) => {
 
 
 
-export const registerCourse = async (req, res, next) => {
-  const { courseId } = req.body;
+
+export const submitKt = async (req, res, next) => {
+  const { kt } = req.body;
+  const courseId = req.params.courseId;
   try {
-const user = await Student.findById(req.user.id);
-if (!user) {
-  return next(new ErrorResponse("User not found", 404));
+    const user = await Student.findById(req.user.id);
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
     }
-    
-    user.courses.push(courseId);
+
+    // const alreadyRegistered = user.courses.find(
+    //   (item) => item.course == courseId
+    // );
+    // if (alreadyRegistered) {
+    //   return next(new ErrorResponse("Already Registered", 404));
+    // }
+
+    const course = await Course.findById(courseId).select("outline kt").populate({
+      path: "kt",
+      model: "KT",
+      select:
+        "easy._id medium._id hard._id  easy.correctOption medium.correctOption hard.correctOption",
+    });
+
+    if (!course) {
+      return next(new ErrorResponse("Course not found", 404));
+    }
+
+    const ktlevel = await ktLogic(kt, course.kt);
+    const klevel = ktlevel.level == "1" ? "easy" : ktlevel.level == "2" ? "medium" : "hard";
+
+
+    const accessMod = course.outline.courseStructure.map((item, index) => {
+      if (index == 0) {
+        return {
+          moduleId: item,
+          access: true,
+          level:klevel
+        };
+      } else {
+        return {
+          moduleId: item,
+          access: false,
+          level:klevel
+        };
+      }
+    });
+
+    user.courses.push({ course: courseId, modules: accessMod,kt:kt });
     await user.save();
 
-    res.json({ status:"success", data: courseId });
+    // user.courses = user.courses.map((item) => {
+    //   if (item.course == courseId) {
+    //     item.modules = item.modules.map((mod) => {
+    //       return {
+    //         ...mod,
+    //         level: klevel
+    //       }
+    //     })
+    //     return {
+    //       ...item,
+    //       kt
+    //     }
+    //   }
+    //   else {
+    //     return item
+    //   }
+    // });
+
+    // await user.save();
 
 
+    res.json({ status: "success", courseId:courseId,data: ktlevel });
+
+    // res.json({ status: "success", data: course });
+
+  } catch (error) {
+    next(error);
+  }
+
+};
+
+
+
+export const submitQt = async (req, res, next) => {
+  const { kt } = req.body;
+  const courseId = req.params.courseId;
+  const moduleId = req.params.moduleId;
+
+  try {
+    const user = await Student.findById(req.user.id);
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    // const alreadyRegistered = user.courses.find(
+    //   (item) => item.course == courseId
+    // );
+    // if (alreadyRegistered) {
+    //   return next(new ErrorResponse("Already Registered", 404));
+    // }
+
+    const course = await Module.findById(moduleId)
+      .select("quizId")
+      .populate({
+        path: "quizId",
+        model: "Quiz",
+        select:
+          "easy._id medium._id hard._id  easy.correctOption medium.correctOption hard.correctOption",
+      });
+
+    if (!course) {
+      return next(new ErrorResponse("Course not found", 404));
+    }
+
+    const qtlevel = await ktLogic(kt, course.kt);
+    const qlevel = qtlevel.level == "1" ? "easy" : qtlevel.level == "2" ? "medium" : "hard";
+    
+    const cIndex = user.courses.findIndex(x => x.course == courseId);
+    const mIndex = user.courses[cIndex].modules.findIndex((x) => x.moduleId == moduleId);
+    const mlen = user.courses[cIndex].modules.length;
+    if (mIndex + 1 < mlen) {
+      user.courses[cIndex].modules[mIndex + 1].level = qlevel;
+      user.courses[cIndex].modules[mIndex + 1].access = true;
+      await user.save();
+    }
+
+
+    res.json({ status: "success", courseId: courseId, data: qtlevel });
+
+    // res.json({ status: "success", data: course });
   } catch (error) {
     next(error);
   }
