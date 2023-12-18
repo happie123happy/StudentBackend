@@ -1,26 +1,39 @@
 import { ErrorResponse } from "../../utils/error.js";
-import {sendToken} from "../../utils/auth.js"
-import sendEmail from "../../utils/email.js"
-import { Instructor } from "../../models/instructor/index.js";
+import { sendToken } from "../../utils/auth.js";
+import sendEmail from "../../utils/email.js";
+import { Instructor, Student } from "../../models/student/index.js";
 
-const register = async (req, res,next) => {
+const register = async (req, res, next) => {
   const { email, password } = req.body;
   try {
-      const user1 = await Instructor.findOne({ email });
-      if (user1) {
-        return next(new ErrorResponse("email already exists", 404));
-      }
-        const user = await Instructor.create({
-            email,
-            password
-        });
-        sendToken(user,201,res)
-    } catch (error) {
-        next(error);
+    const inst = await Instructor.findOne({ email });
+    if (inst) {
+      return next(new ErrorResponse("Instructor found with this email - Use a different email to signup", 404));      
     }
-}
 
-const login = async (req, res,next) => {
+    const user1 = await Student.findOne({ email });
+    if (user1) {
+      return next(new ErrorResponse("email already exists", 404));
+    }
+
+    const user = await Student.create({
+      email,
+      password,
+    });
+
+    const userData = {
+      _id: user._id,
+      email: user.email,
+      courses: user.courses,
+      role:user.role
+    }
+    sendToken(userData, 201, res);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const login = async (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -29,7 +42,7 @@ const login = async (req, res,next) => {
     );
   }
   try {
-    const user = await Instructor.findOne({ email }).select("+password");
+    const user = await Student.findOne({ email }).select("+password");
     if (!user) {
       return next(new ErrorResponse("Invalid Credentials", 401));
     }
@@ -37,9 +50,14 @@ const login = async (req, res,next) => {
     if (!isMatch) {
       return next(new ErrorResponse("Invalid Credentials", 401));
     }
+    const userData = {
+      _id: user._id,
+      email: user.email,
+      courses: user.courses,
+      role:user.role
+    };
 
-    sendToken(user, 200, res);
-      
+    sendToken(userData, 200, res);
   } catch (err) {
     return res.status(500).json({ error: "cannot register user" });
   }
@@ -49,12 +67,11 @@ const forgotPassword = async (req, res, next) => {
   const { email } = req.body;
 
   try {
-
     if (req.user.email != email) {
       return next(new ErrorResponse("Invalid Access Token", 400));
     }
 
-    const user = await Instructor.findOne({ _id:req.user.id });
+    const user = await Student.findOne({ _id: req.user.id });
     if (!user) {
       return next(new ErrorResponse("Email could not be sent", 404));
     }
@@ -91,14 +108,12 @@ const forgotPassword = async (req, res, next) => {
   }
 };
 
-
 const resetPassword = async (req, res, next) => {
   console.log("Reset password");
   const { password } = req.body;
   const resetPasswordToken = req.params.resetToken;
   try {
-
-    const user = await Instructor.findOne({
+    const user = await Student.findOne({
       resetPasswordToken,
       resetPasswordExpire: { $gt: Date.now() },
     });
@@ -106,7 +121,7 @@ const resetPassword = async (req, res, next) => {
     if (!user) {
       return next(new ErrorResponse("Invalid Reset Token", 400));
     }
-    
+
     user.password = password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
@@ -120,5 +135,4 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
-
-export {register,login,forgotPassword,resetPassword}
+export { register, login, forgotPassword, resetPassword };

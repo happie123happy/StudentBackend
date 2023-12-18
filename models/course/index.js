@@ -1,9 +1,6 @@
 import mongoose from "mongoose";
 import { Schema, model } from "mongoose";
 
-
-
-
 const quizSchema = new Schema({
   name: String,
   moduleId: {
@@ -68,7 +65,6 @@ const ktSchema = new Schema({
   ],
 });
 
-
 const subModuleSchema = new Schema({
   moduleId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -76,32 +72,31 @@ const subModuleSchema = new Schema({
     required: true,
   },
   order: Number,
-  name:String,
+  name: String,
   content: {
     type: String,
-    default: " "
+    default: " ",
   },
-  easy:{
+  easy: {
     type: String,
-    default: " "
+    default: " ",
   },
-  medium:{
+  medium: {
     type: String,
-    default: " "
+    default: " ",
   },
-  hard:{
+  hard: {
     type: String,
-    default: " "
+    default: " ",
   },
   examples: [String],
   ytLinks: [String],
   articleLinks: [String],
 });
 
-
 const moduleSchema = new Schema({
-  order:Number,
-  moduleName:String,
+  order: Number,
+  moduleName: String,
   courseId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Course",
@@ -111,29 +106,29 @@ const moduleSchema = new Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Instructor",
     required: true,
-    },
+  },
   subModules: [
     {
       type: mongoose.Schema.Types.ObjectId,
       ref: "SubModule",
     },
-    ],
+  ],
   quizId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Quiz",
   },
 });
 
-moduleSchema.pre('remove', async function (next) {
+moduleSchema.pre("remove", async function (next) {
   const subModule = mongoose.model("SubModule");
   await subModule.deleteMany({ _id: { $in: this.subModules } });
-  
+  console.log("Submodules deleted : ", this._id);
   const Quiz = mongoose.model("Quiz");
-  await Quiz.deleteOne({_id:this.quizId})
+  await Quiz.deleteOne({ _id: this.quizId });
+  console.log("Quiz deleted : ", this._id);
 
   next();
 });
-
 
 const courseSchema = new Schema({
   instId: {
@@ -146,42 +141,44 @@ const courseSchema = new Schema({
   duration: String,
   courseOn: String,
   dummyOutline: {
-    type:String,
-    default:" "
+    type: String,
+    default: "{}",
   },
   status: {
-    type:String,
-    default:"editing"
+    type: String,
+    default: "editing",
   },
-
+  prereq: [String],
   outline: {
     courseTitle: String,
-    courseDescription:String,
+    courseDescription: String,
     courseObjective: [String],
     courseTags: [String],
-    courseStructure: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref:"Module"
-    }]
+    courseStructure: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Module",
+      },
+    ],
   },
 
   kt: {
     type: mongoose.Schema.ObjectId,
-    ref:"KT"
-  }
+    ref: "KT",
+  },
 });
 
+courseSchema.pre("remove", async function (next) {
+  const Module = mongoose.model("Module");
+  await Module.deleteMany({ _id: { $in: this.outline.courseStructure } });
+  console.log("Modules deleted : ", this._id);
 
-courseSchema.pre('remove', async function (next) {
-    const Module = mongoose.model("Module");
-    await Module.deleteMany({ _id: { $in: this.outline.courseStructure } });
-    
-    const Kt = mongoose.model("KT");
-    await Kt.deleteOne({ _id: this.Kt });
+  const Kt = mongoose.model("KT");
+  await Kt.deleteOne({ _id: this.Kt });
+  console.log("Kt deleted : ", this._id);
 
-    next();
+  next();
 });
-
 
 const publishSchema = new Schema({
   instId: {
@@ -196,9 +193,6 @@ const publishSchema = new Schema({
   },
 });
 
-
-
-
 const Course = model("Course", courseSchema);
 const Module = model("Module", moduleSchema);
 const SubModule = model("SubModule", subModuleSchema);
@@ -206,11 +200,4 @@ const Quiz = model("Quiz", quizSchema);
 const Kt = model("KT", ktSchema);
 const Publish = model("Publish", publishSchema);
 
-export {
-  Course,
-  Module,
-  SubModule,
-  Quiz,
-  Kt,
-  Publish
-}
+export { Course, Module, SubModule, Quiz, Kt, Publish };

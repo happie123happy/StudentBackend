@@ -14,6 +14,6 @@ import {
 router.post("/register",register);
 router.post("/login",login);
 router.post("/forgotpassword",auth,forgotPassword);
-router.post("/resetpassword/:resetToken",resetPassword);
+router.post("/resetpassword/:resetToken",auth,resetPassword);
 
 export default router;

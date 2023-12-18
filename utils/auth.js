@@ -1,14 +1,13 @@
-import jwt from "jsonwebtoken"
+import jwt from "jsonwebtoken";
 
 const sendToken = (user, status, res) => {
-    
-    const token = jwt.sign(
-      { id: user._id, email: user.email },
-        process.env.JWT_SECRET,
-      {expiresIn:86400}
-    );
+  const token = jwt.sign(
+    { id: user._id, email: user.email, type: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: 86400 }
+  );
 
-    res.status(status).json({user,token})
-}
+  res.status(status).json({ user, token });
+};
 
-export {sendToken};
+export { sendToken };

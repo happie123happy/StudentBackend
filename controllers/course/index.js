@@ -1,29 +1,46 @@
 import { ErrorResponse } from "../../utils/error.js";
-import { Course, Kt, Module, Publish, Quiz, SubModule } from "../../models/course/index.js";
-import { Instructor } from "../../models/instructor/index.js";
-import { getCourseOutlineAi,getKt } from "./courseAi.js";
+import {
+  Course,
+  Kt,
+  Module,
+  Publish,
+  Quiz,
+  SubModule,
+} from "../../models/course/index.js";
+import { Instructor } from "../../models/student/index.js";
+import { getCourseOutlineAi, getKt } from "./courseAi.js";
 
 const createCourse = async (req, res, next) => {
   const { target, duration, courseOn } = req.body;
 
   try {
-    const course1 = await Course.findOne({ target, duration, courseOn,"instId":req.user.id });
+    const course1 = await Course.findOne({
+      target,
+      duration,
+      courseOn,
+      instId: req.user.id,
+    });
     if (course1) {
       console.log(course1.dummyOutline);
     }
-    if (course1 && (course1.outline.courseTags.length!=0 || course1.dummyOutline !==" ")) {
+    if (
+      course1 &&
+      (course1.outline.courseTags.length != 0 || course1.dummyOutline !== " ")
+    ) {
       console.log(course1);
       res
         .status(200)
-        .json({ courseData: JSON.parse(course1.dummyOutline), courseId: course1._id });
+        .json({
+          courseData: JSON.parse(course1.dummyOutline),
+          courseId: course1._id,
+        });
       return;
     }
 
     let course;
     if (course1) {
       course = course1;
-    }
-    else { 
+    } else {
       course = await Course.create({
         instId: req.user.id,
         target,
@@ -33,7 +50,7 @@ const createCourse = async (req, res, next) => {
     }
 
     const outline = await getCourseOutlineAi(courseOn, target, duration);
-      
+
     // let [course, outline] = await Promise.all([
     //   Course.create({
     //     instId: req.user.id,
@@ -46,14 +63,14 @@ const createCourse = async (req, res, next) => {
 
     course.dummyOutline = JSON.stringify(outline);
     await course.save();
-    
+
     const user = await Instructor.findById(req.user.id);
     user.courses.push(course._id);
     await user.save();
 
     console.log(course);
 
-    res.status(200).json({"courseData":outline,"courseId":course._id});
+    res.status(200).json({ courseData: outline, courseId: course._id });
   } catch (error) {
     next(error);
   }
@@ -135,15 +152,10 @@ const addCourseOutline = async (req, res, next) => {
 
     console.log(pcourse);
     res.json(pcourse);
-
   } catch (error) {
     next(error);
   }
 };
-
-
-
-
 
 export const deleteCourse = async (req, res, next) => {
   const { courseId } = req.body;
@@ -160,31 +172,25 @@ export const deleteCourse = async (req, res, next) => {
     // for (const moduleData of courseData.courseStructure) {
     //   // delete quiz of each module
     //   console.log("Deleted Quiz : ",moduleData.quizId)
-      
-      
+
     //   for (const subModuleName of moduleData.subModules) {
     //     //delete submodule of each module
     //     console.log("Deleted submodule : ",subModuleName)
     //   }
-      
+
     //   console.log("Deleted Module : ",moduleData)
     // }
-    
+
     // // delete course
     // console.log("Deleted Course : ")
 
-    const course = await Course.deleteOne({_id:courseId});
+    const course = await Course.deleteOne({ _id: courseId });
 
     res.json(course);
   } catch (error) {
     next(error);
   }
 };
-
-
-
-
-
 
 const getCourse = async (req, res, next) => {
   try {
@@ -195,15 +201,17 @@ const getCourse = async (req, res, next) => {
 
     const pcourse = await course.outline.populate({
       path: "courseStructure",
-      populate: [{
-        path: "subModules",
-        model: "SubModule",
-      }, {
-      path: "quizId",
-      model:"Quiz"
-        }]
-      }
-      );
+      populate: [
+        {
+          path: "subModules",
+          model: "SubModule",
+        },
+        {
+          path: "quizId",
+          model: "Quiz",
+        },
+      ],
+    });
 
     // console.log(pcourse);
     res.json(pcourse);
@@ -225,48 +233,46 @@ export const getCourses = async (req, res, next) => {
   }
 };
 
-
-
-
 export const generateKt = async (req, res, next) => {
   const { prereq } = req.body;
   try {
     const course = await Course.findOne({
-      $and: [{ _id: req.params.courseId }, { kt: { $exists: false } }]
+      $and: [{ _id: req.params.courseId }, { kt: { $exists: false } }],
     });
-
 
     if (!course) {
       const course = await Course.findById(req.params.courseId);
       const courseData = await course.populate({
         path: "kt",
-        model: "Kt"
+        model: "Kt",
       });
 
       res.json({
         status: "success",
-        data: courseData.kt
+        data: courseData.kt,
       });
 
       return;
     }
 
-    const content = await getKt(
-      course.courseOn,
-      course.target,
-      prereq
-    );
+    const content = await getKt(course.courseOn, course.target, prereq);
 
     // console.log(content)
 
-    const kt = await Kt.create({ instId: req.user.id, courseId: course._id, easy: content.easy, medium: content.medium, hard: content.hard });
+    const kt = await Kt.create({
+      instId: req.user.id,
+      courseId: course._id,
+      easy: content.easy,
+      medium: content.medium,
+      hard: content.hard,
+    });
     course.kt = kt._id;
 
     await course.save();
 
     res.json({
       status: "success",
-      data: kt
+      data: kt,
     });
   } catch (error) {
     next(error);
@@ -348,24 +354,21 @@ export const updateKtH = async (req, res, next) => {
   }
 };
 
-
-
-
 export const publishCourse = async (req, res, next) => {
-  
   try {
-    const pub = await Publish.create({ instId: req.user.id, courseId: req.params.courseId });
+    const pub = await Publish.create({
+      instId: req.user.id,
+      courseId: req.params.courseId,
+    });
 
     res.json({
       status: "success",
-      data: pub
+      data: pub,
     });
-
   } catch (error) {
     next(error);
   }
 };
-
 
 // export const  = async (req, res, next) => {
 //   try {
@@ -375,6 +378,4 @@ export const publishCourse = async (req, res, next) => {
 //   }
 // };
 
-
-
-export { createCourse, addCourseOutline,getCourse};
+export { createCourse, addCourseOutline, getCourse };
