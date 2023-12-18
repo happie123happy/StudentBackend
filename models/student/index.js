@@ -49,26 +49,35 @@ const StudentSchema = new Schema({
       course: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Course",
+        index: true,
+        unique: true,
+        required: true,
       },
-      modules: [{
-        moduleId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Module"
+      modules: [
+        {
+          moduleId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Module",
+            index: true,
+            unique: true,
+          },
+          access: {
+            type: Boolean,
+            default: false,
+          },
+          level: {
+            type: String,
+            default: "easy",
+          },
         },
-        access: {
-          type: Boolean,
-          default:false
+      ],
+      kt: [
+        {
+          questionId: String,
+          difficulty: String,
+          answer: String,
         },
-        level: {
-          type: String,
-          default:"easy"
-        }
-      }],
-      kt: [{
-        questionId: String,
-        difficulty: String,
-        answer:String
-      }]
+      ],
     },
   ],
 

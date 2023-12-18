@@ -363,15 +363,74 @@ export const getKt = async (req, res, next) => {
         path: "kt",
         model: "KT",
         select: "-easy.correctOption -medium.correctOption -hard.correctOption",
+        // select: "easy._id medium._id hard._id easy.correctOption medium.correctOption hard.correctOption",
       })
       .select(["kt"]);
-    
+
+    //   const ktSystem = course.kt;
+    //   const resp = [];
+
+    //   for (const ques of ktSystem.easy) {
+    //   resp.push({difficulty:"easy",option:ques.correctOption,_id:ques._id})
+    // }
+    // for (const ques of ktSystem.medium) {
+    //     resp.push({difficulty:"medium",option:ques.correctOption,_id:ques._id})
+    //   }
+    //   for (const ques of ktSystem.hard) {
+    //     resp.push({difficulty:"hard",option:ques.correctOption,_id:ques._id})
+    //   }
+
     if (!course) {
       return next(new ErrorResponse("Knowledge Test/Course Not Found", 404));
     }
 
     // console.log(pcourse);
-    res.json(course);
+    // res.json(resp);
+    res.json({status:"success",data:course});
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getQt = async (req, res, next) => {
+  try {
+
+    // const user = await Student.findById(req.user.id);
+    // if (!user) {
+    //   return next(new ErrorResponse("User not found", 404));
+    // }
+
+    const module = await Module.findOne({
+      $and: [{ _id: req.params.moduleId }, {courseId:req.params.courseId}, { quizId: { $exists: true } }],
+    })
+      .populate({
+        path: "quizId",
+        model: "Quiz",
+        select: "-easy.correctOption -medium.correctOption -hard.correctOption",
+        // select: "easy._id medium._id hard._id easy.correctOption medium.correctOption hard.correctOption",
+      })
+      .select(["quizId"]);
+    
+  //   const ktSystem = module.quizId;
+  //   const resp = [];
+    
+  //   for (const ques of ktSystem.easy) {
+  //   resp.push({difficulty:"easy",option:ques.correctOption,_id:ques._id})
+  // }
+  // for (const ques of ktSystem.medium) {
+  //     resp.push({difficulty:"medium",option:ques.correctOption,_id:ques._id})
+  //   }
+  //   for (const ques of ktSystem.hard) {
+  //     resp.push({difficulty:"hard",option:ques.correctOption,_id:ques._id})
+  //   }
+    
+    if (!module) {
+      return next(new ErrorResponse("Quiz Test/Module Not Found", 404));
+    }
+
+    // console.log(course);
+    // res.json(resp);
+    res.json({status:"success",data:module});
   } catch (error) {
     next(error);
   }
@@ -395,6 +454,16 @@ export const submitKt = async (req, res, next) => {
     // if (alreadyRegistered) {
     //   return next(new ErrorResponse("Already Registered", 404));
     // }
+
+    const cIndex = user.courses.findIndex((x) => x.course == courseId);
+    if (cIndex !== -1) {
+          res.json({
+            status: "success",
+            courseId: courseId,
+            level: user.courses[cIndex].modules[0].level,
+          });
+          return
+    }
 
     const course = await Course.findById(courseId).select("outline kt").populate({
       path: "kt",
@@ -422,7 +491,7 @@ export const submitKt = async (req, res, next) => {
         return {
           moduleId: item,
           access: false,
-          level:klevel
+          level:"easy"
         };
       }
     });
@@ -464,7 +533,7 @@ export const submitKt = async (req, res, next) => {
 
 
 export const submitQt = async (req, res, next) => {
-  const { kt } = req.body;
+  const { qt } = req.body;
   const courseId = req.params.courseId;
   const moduleId = req.params.moduleId;
 
@@ -481,7 +550,7 @@ export const submitQt = async (req, res, next) => {
     //   return next(new ErrorResponse("Already Registered", 404));
     // }
 
-    const course = await Module.findById(moduleId)
+    const module = await Module.findById(moduleId)
       .select("quizId")
       .populate({
         path: "quizId",
@@ -490,11 +559,11 @@ export const submitQt = async (req, res, next) => {
           "easy._id medium._id hard._id  easy.correctOption medium.correctOption hard.correctOption",
       });
 
-    if (!course) {
-      return next(new ErrorResponse("Course not found", 404));
+    if (!module) {
+      return next(new ErrorResponse("module not found", 404));
     }
 
-    const qtlevel = await ktLogic(kt, course.kt);
+    const qtlevel = await ktLogic(qt, module.quizId);
     const qlevel = qtlevel.level == "1" ? "easy" : qtlevel.level == "2" ? "medium" : "hard";
     
     const cIndex = user.courses.findIndex(x => x.course == courseId);
@@ -507,7 +576,7 @@ export const submitQt = async (req, res, next) => {
     }
 
 
-    res.json({ status: "success", courseId: courseId, data: qtlevel });
+    res.json({ status: "success", moduleId: moduleId, data: qtlevel });
 
     // res.json({ status: "success", data: course });
   } catch (error) {

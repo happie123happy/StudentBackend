@@ -10,8 +10,10 @@ import {
   getCourseDetails,
   getCourses,
   getKt,
+  getQt,
   registerCourse,
   submitKt,
+  submitQt,
 
 } from "../controllers/course/index.js";
 import { updateProfile } from "../controllers/student/index.js";
@@ -44,11 +46,14 @@ router.post("/getcoursecontent/:courseId", getCourseContent);
 // get kt from course
 router.get("/getkt/:courseId", getKt);
 
+// get qt from course
+router.get("/getqt/:courseId/:moduleId", getQt);
+
 // submit kt from course
 router.post("/submitkt/:courseId", submitKt);
 
 // submit quiztest from course
-router.post("/submitqt/:courseId/:moduleId", submitKt);
+router.post("/submitqt/:courseId/:moduleId", submitQt);
 
 
 
