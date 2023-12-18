@@ -45,9 +45,14 @@ const StudentSchema = new Schema({
   active: { type: Boolean, default: true },
 
   courses: [
-    {
+    {course:{
       type: mongoose.Schema.Types.ObjectId,
       ref: "Course",
+    },
+      access: {
+        type: Number,
+      default:0
+      }
     },
   ],
 
@@ -82,6 +87,15 @@ StudentSchema.methods.getResetPasswordToken = function () {
 };
 
 export const Student = model("Student", StudentSchema);
+
+
+
+
+
+
+
+
+
 
 const InstructorSchema = new Schema({
   email: {

@@ -168,6 +168,7 @@ const courseSchema = new Schema({
   },
 });
 
+
 courseSchema.pre("remove", async function (next) {
   const Module = mongoose.model("Module");
   await Module.deleteMany({ _id: { $in: this.outline.courseStructure } });
@@ -179,6 +180,7 @@ courseSchema.pre("remove", async function (next) {
 
   next();
 });
+
 
 const publishSchema = new Schema({
   instId: {
@@ -192,6 +194,7 @@ const publishSchema = new Schema({
     required: true,
   },
 });
+
 
 const Course = model("Course", courseSchema);
 const Module = model("Module", moduleSchema);

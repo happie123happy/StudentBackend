@@ -4,37 +4,35 @@ import auth from "../middleware/auth.js";
 const router = express.Router();
 //import controllers
 import {
-  createCourse,
-  addCourseOutline,
+  getAllCourses,
   getCourse,
+  getCourseDetails,
   getCourses,
-  deleteCourse,
-  getCourseOutline,
-  generateKt,
-  updateKtE,
-  updateKtM,
-  updateKtH,
-  publishCourse,
+  registerCourse,
+
 } from "../controllers/course/index.js";
+import { updateProfile } from "../controllers/student/index.js";
 
 
 //routes
 router.use(auth);
 
+// update profile
+router.post("/updateprofile", updateProfile);
+
+// find my courses
+router.get("/getcourses", getCourses);
+
+// get course details
+router.get("/getcoursedetails", getCourseDetails);
+
+router.post("/registercourse", registerCourse);
+
 
 // get full course
 router.get("/:courseId", getCourse);
 
-// save course outline and go to next
-router.post("/savecourseoutline", addCourseOutline);
 
-// publish course
-router.post("/publish/:courseId", publishCourse);
-
-router.post("/registercourse", addModule);
-
-router.get("/getcourses", getCourses);
-router.delete("/deletecourse", deleteCourse);
 
 
 export default router;
