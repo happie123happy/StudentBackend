@@ -51,15 +51,13 @@ const StudentSchema = new Schema({
         ref: "Course",
         index: true,
         unique: true,
-        required: true,
+        required: true
       },
       modules: [
         {
           moduleId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Module",
-            index: true,
-            unique: true,
           },
           access: {
             type: Boolean,
@@ -68,7 +66,7 @@ const StudentSchema = new Schema({
           level: {
             type: String,
             default: "easy",
-          },
+          }
         },
       ],
       kt: [

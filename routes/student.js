@@ -5,6 +5,7 @@ const router = express.Router();
 //import controllers
 import {
   getAllCourses,
+  getArticles,
   getCourse,
   getCourseContent,
   getCourseDetails,
@@ -42,6 +43,9 @@ router.get("/course/:courseId", getCourse);
 
 // post content from course
 router.post("/getcoursecontent/:courseId", getCourseContent);
+
+// get articles from course
+router.get("/getarticles/:id", getArticles);
 
 // get kt from course
 router.get("/getkt/:courseId", getKt);

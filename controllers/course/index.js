@@ -9,6 +9,7 @@ import {
 } from "../../models/course/index.js";
 import { Instructor, Student } from "../../models/student/index.js";
 import { ktLogic } from "../student/index.js";
+import { getArticleAI } from "./courseAi.js";
 
 export const displayAllCourses = async (req, res, next) => {
   try {
@@ -117,14 +118,16 @@ export const getAllCourses = async (req, res, next) => {
 
     for (const mod of user.courses) {
       const d = accessData[mod.course];
+      const ktlen = mod.kt.length;
       accessData[mod.course] = {
         isRegistered: true,
+        ktDone:ktlen!=0,
         data: {
           outline: d.data.outline,
           target: d.data.target,
           duration: d.data.duration,
-          courseOn: d.data.courseOn,
-        },
+          courseOn: d.data.courseOn
+        }
       };
     }
 
@@ -191,6 +194,7 @@ export const getCourses = async (req, res, next) => {
 export const registerCourse = async (req, res, next) => {
   const { courseId } = req.body;
   try {
+
     const user = await Student.findById(req.user.id);
     if (!user) {
       return next(new ErrorResponse("User not found", 404));
@@ -199,6 +203,7 @@ export const registerCourse = async (req, res, next) => {
     const alreadyRegistered = user.courses.find(
       (item) => item.course == courseId
     );
+
     if (alreadyRegistered) {
       return next(new ErrorResponse("Already Registered", 404));
     }
@@ -211,6 +216,7 @@ export const registerCourse = async (req, res, next) => {
     }
 
     const accessMod = course.outline.courseStructure.map((item, index) => {
+      console.log(item)
       if (index == 0) {
         return {
           moduleId: item,
@@ -224,7 +230,12 @@ export const registerCourse = async (req, res, next) => {
       }
     });
 
-    user.courses.push({ course: courseId, modules: accessMod });
+    console.log(accessMod);
+
+    const arr = user.courses;
+  
+    arr.push({ course: courseId, modules: accessMod });
+    user.courses = arr;
     await user.save();
 
     res.json({ status: "success", courseId: courseId, data: accessMod });
@@ -392,6 +403,8 @@ export const getKt = async (req, res, next) => {
   }
 };
 
+
+
 export const getQt = async (req, res, next) => {
   try {
 
@@ -436,6 +449,40 @@ export const getQt = async (req, res, next) => {
   }
 };
 
+export const getArticles = async (req, res, next) => {
+  try {
+
+    const submodule = await SubModule.findOne({
+      _id: req.params.id
+    })
+      .select(["_id","name", "articleLinks"]);
+    
+    
+    if (!submodule) {
+      return next(new ErrorResponse("submodule Not Found", 404));
+    }
+    
+    if (submodule.articleLinks.length!=0) {
+      res.json({status:"success",data:submodule});
+      return;
+    }
+    
+    const content = await getArticleAI(submodule.name);
+    if (!content) {
+      return next(new ErrorResponse("submodule Not Found", 404));
+    }
+
+    submodule.articleLinks = content.search_results;
+    await submodule.save();
+
+    console.log(submodule);
+    // res.json(resp);
+    res.json({status:"success",data:submodule});
+  } catch (error) {
+    next(error);
+  }
+
+};
 
 
 

@@ -2,6 +2,27 @@
 
 
 
+export const getArticleAI = async (topic) => {
+  try {
+    // get course outline from AI
+    const resp = await fetch(process.env.AI_URL_ARTICLES, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+       topic
+      }),
+    });
+
+    const data = await resp.json();
+    return data;
+  } catch (error) {
+    console.log("Error: ",error);
+  }
+};
+
 export const getKt = async (coursename, audience, prerequisitelist) => {
   try {
     // get course outline from AI
