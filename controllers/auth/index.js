@@ -4,7 +4,7 @@ import sendEmail from "../../utils/email.js";
 import { Instructor, Student } from "../../models/student/index.js";
 
 const register = async (req, res, next) => {
-  const { email, password } = req.body;
+  const { email, password,firstName,lastName } = req.body;
   try {
     const inst = await Instructor.findOne({ email });
     if (inst) {
@@ -21,8 +21,15 @@ const register = async (req, res, next) => {
       password,
     });
 
+    user.profile.firstName = firstName;
+    user.profile.lastName = lastName;
+
+    await user.save()
+
     const userData = {
       _id: user._id,
+      firstName,
+      lastName,
       email: user.email,
       courses: user.courses,
       role:user.role
@@ -52,6 +59,8 @@ const login = async (req, res, next) => {
     }
     const userData = {
       _id: user._id,
+      firstName:user.profile.firstName,
+      lastName:user.profile.lastName,
       email: user.email,
       courses: user.courses,
       role:user.role

@@ -347,7 +347,7 @@ export const getCourse = async (req, res, next) => {
           ],
         },
       ])
-      .select(["-dummyOutline"]);
+      // .select(["dummyOutline"]);
 
     if (!course) {
       return next(new ErrorResponse("Course not found", 404));
@@ -469,14 +469,15 @@ export const getArticles = async (req, res, next) => {
     
     const content = await getArticleAI(submodule.name);
     if (!content) {
-      return next(new ErrorResponse("submodule Not Found", 404));
+      return next(new ErrorResponse("Content Not Found", 404));
     }
 
-    submodule.articleLinks = content.search_results;
-    await submodule.save();
+    submodule.articleLinks = content.search_results
+    // await submodule.save();
 
-    console.log(submodule);
-    // res.json(resp);
+    console.log(submodule.articleLinks);
+    console.log(content.search_results);
+  
     res.json({status:"success",data:submodule});
   } catch (error) {
     next(error);

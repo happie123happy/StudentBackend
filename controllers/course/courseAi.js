@@ -15,8 +15,9 @@ export const getArticleAI = async (topic) => {
        topic
       }),
     });
-
+    // console.log(await resp.text());
     const data = await resp.json();
+    console.log(data)
     return data;
   } catch (error) {
     console.log("Error: ",error);

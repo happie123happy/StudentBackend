@@ -48,10 +48,7 @@ const StudentSchema = new Schema({
     {
       course: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Course",
-        index: true,
-        unique: true,
-        required: true
+        ref: "Course"
       },
       modules: [
         {

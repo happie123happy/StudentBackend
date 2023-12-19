@@ -14,7 +14,7 @@ import {
   getQt,
   registerCourse,
   submitKt,
-  submitQt,
+  submitQt
 
 } from "../controllers/course/index.js";
 import { updateProfile } from "../controllers/student/index.js";
