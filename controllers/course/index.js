@@ -531,6 +531,19 @@ export const submitKt = async (req, res, next) => {
 
     const cIndex = user.courses.findIndex((x) => x.course == courseId);
     if (cIndex != -1) {
+
+          const course = await Course.findById(courseId)
+            .select("outline kt")
+            .populate({
+              path: "kt",
+              model: "KT",
+              select:
+                "easy._id medium._id hard._id  easy.correctOption medium.correctOption hard.correctOption",
+            });
+
+          if (!course) {
+            return next(new ErrorResponse("Course not found", 404));
+          }
       
       const ktlevel = await ktLogic(kt, course.kt);
       const klevel =
@@ -557,6 +570,7 @@ export const submitKt = async (req, res, next) => {
         }
       });
 
+      user.courses[cIndex].course = courseId;
       user.courses[cIndex].modules = accessMod;
       user.courses[cIndex].kt = kt;
       await user.save();
@@ -686,6 +700,44 @@ export const submitQt = async (req, res, next) => {
   }
 };
 
+
+
+export const getAnalytics = async (req, res, next) => {
+  try {
+
+    const user = await Student.findById(req.user.id);
+    if (!user) {
+      next(new ErrorResponse("User not found",400))
+    }
+
+    const findCourseProgress = (modules) => {
+      const modLen = modules.length;
+      const isaccessable = modules.filter((item) => item.access);
+      return (isaccessable.length/modLen)*100
+      // const 
+    }
+
+    const coursesEnrolled = user.courses.length;
+    const courseProgress = user.courses.map((item, i) => {
+      const coursePro = findCourseProgress(user.courses.modules);
+      return {
+        courseId: item.course,
+        progress: coursePro
+      }
+    });
+
+    res.json({
+      enrolled:coursesEnrolled,
+      progress:courseProgress
+    })
+
+
+
+
+  } catch (error) {
+    next(error);
+  }
+};
 
 
 // export const  = async (req, res, next) => {
