@@ -74,6 +74,8 @@ export const getCourseDetails = async (req, res, next) => {
       ],
     });
 
+    console.log(pcourse)
+
      const user = await Student.findById(req.user.id);
      if (!user) {
        return next(new ErrorResponse("User not found", 404));
