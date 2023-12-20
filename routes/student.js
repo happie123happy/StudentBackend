@@ -5,6 +5,7 @@ const router = express.Router();
 //import controllers
 import {
   getAllCourses,
+  getAnalytics,
   getArticles,
   getCourse,
   getCourseContent,
@@ -57,13 +58,13 @@ router.get("/getkt/:courseId", getKt);
 // get qt from course
 router.get("/getqt/:courseId/:moduleId", getQt);
 
+router.get("/analytics", getAnalytics);
+
 // submit kt from course
 router.post("/submitkt/:courseId", submitKt);
 
 // submit quiztest from course
 router.post("/submitqt/:courseId/:moduleId", submitQt);
-
-
 
 
 export default router;

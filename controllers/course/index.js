@@ -84,8 +84,8 @@ export const getCourseDetails = async (req, res, next) => {
       return next(new ErrorResponse("course not found", 404));
     }
 
-    console.log(user.courses)
-    console.log(cindex)
+    // console.log(user.courses)
+    // console.log(cindex)
     const modAcc = user.courses[cindex].modules;
 
 
@@ -509,15 +509,16 @@ export const getArticles = async (req, res, next) => {
       return next(new ErrorResponse("submodule Not Found", 404));
     }
     
-    if (submodule.articleLinks.length!=0) {
-      res.json({status:"success",data:submodule});
-      return;
-    }
+    // if (submodule.articleLinks.length!=0) {
+    //   res.json({status:"success",data:submodule});
+    //   return;
+    // }
     
     const content = await getArticleAI(submodule.name);
     if (!content) {
       return next(new ErrorResponse("Content Not Found", 404));
     }
+    console.log(content)
 
     submodule.articleLinks = content.search_results
     await submodule.save();
