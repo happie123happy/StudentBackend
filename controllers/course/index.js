@@ -285,7 +285,7 @@ export const getCourseContent = async (req, res, next) => {
     }
 
     // console.log(pcourse);
-    res.json({ status: "success", data: submodule });
+    res.json({ status: "success",level:accMod, data: submodule });
   } catch (error) {
     next(error);
   }
@@ -730,8 +730,6 @@ export const getAnalytics = async (req, res, next) => {
       enrolled:coursesEnrolled,
       progress:courseProgress
     })
-
-
 
 
   } catch (error) {
