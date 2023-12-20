@@ -74,8 +74,24 @@ export const getCourseDetails = async (req, res, next) => {
       ],
     });
 
+     const user = await Student.findById(req.user.id);
+     if (!user) {
+       return next(new ErrorResponse("User not found", 404));
+      }
+      
+      const cindex = user.courses.findIndex((item) => item.course == req.params.courseId);
+      if (cindex==-1) {
+      return next(new ErrorResponse("course not found", 404));
+    }
+
+    console.log(user.courses)
+    console.log(cindex)
+    const modAcc = user.courses[cindex].modules;
+
+
+
     // console.log(pcourse);
-    res.json({ status: "success", data: pcourse });
+    res.json({ status: "success",modules:modAcc, data: pcourse });
   } catch (error) {
     next(error);
   }
@@ -272,10 +288,10 @@ export const getCourseContent = async (req, res, next) => {
       accMod = accMod.level;
     }
     else if (accMod.level == "medium") {
-      accMod = "easy medium";
+      accMod = "medium";
     }
     else {
-      accMod = "easy medium hard";
+      accMod = "hard";
     }
 
     const submodule = await SubModule.findOne({_id:subModuleId,moduleId:moduleId}).select(accMod);
