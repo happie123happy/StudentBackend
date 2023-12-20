@@ -11,6 +11,7 @@ import {
   getCourseContent,
   getCourseDetails,
   getCourses,
+  getExamples,
   getKt,
   getQt,
   getYt,
@@ -51,6 +52,9 @@ router.get("/getarticles/:id", getArticles);
 
 // get YTlinks from course
 router.get("/getyt/:id", getYt);
+
+// get example from course
+router.get("/examples/:courseId/:id", getExamples);
 
 // get kt from course
 router.get("/getkt/:courseId", getKt);

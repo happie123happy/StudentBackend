@@ -2,7 +2,7 @@
 
 
 
-export const getExampleAI = async (course,submodule,target) => {
+export const getExampleAI = async (submodule, course,target) => {
   try {
     // get course outline from AI
     const resp = await fetch(process.env.AI_URL_EX, {
@@ -12,15 +12,17 @@ export const getExampleAI = async (course,submodule,target) => {
       },
 
       body: JSON.stringify({
-       course,submodule,target
-      })
+        course,
+        submodule,
+        target,
+      }),
     });
     // console.log(await resp.text());
     const data = await resp.json();
-    console.log(data)
+    console.log(data);
     return data;
   } catch (error) {
-    console.log("Error: ",error);
+    console.log("Error: ", error);
   }
 };
 

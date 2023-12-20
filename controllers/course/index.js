@@ -9,7 +9,7 @@ import {
 } from "../../models/course/index.js";
 import { Instructor, Student } from "../../models/student/index.js";
 import { ktLogic } from "../student/index.js";
-import { getArticleAI, getYTAI } from "./courseAi.js";
+import { getArticleAI, getExampleAI, getYTAI } from "./courseAi.js";
 
 export const displayAllCourses = async (req, res, next) => {
   try {
@@ -463,6 +463,47 @@ export const getQt = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
+};
+
+export const getExamples = async (req, res, next) => {
+  try {
+
+    const course = await Course.findOne({
+      _id: req.params.courseId
+    })
+    
+    
+    if (!course) {
+      return next(new ErrorResponse("course Not Found", 404));
+    }
+
+    const submodule = await SubModule.findOne({
+      _id: req.params.id
+    })
+
+    
+    if (!submodule) {
+      return next(new ErrorResponse("submodule Not Found", 404));
+    }
+    
+    if (submodule.examples.length!=0) {
+      res.json({status:"success",data:submodule});
+      return;
+    }
+    
+    const content = await getExampleAI(submodule.name,course.courseOn,course.target);
+    if (!content) {
+      return next(new ErrorResponse("Content Not Found", 404));
+    }
+
+    submodule.examples = content.examplelist;
+    await submodule.save();
+  
+    res.json({status:"success",data:submodule});
+  } catch (error) {
+    next(error);
+  }
+
 };
 
 export const getYt = async (req, res, next) => {
