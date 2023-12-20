@@ -529,15 +529,15 @@ export const submitKt = async (req, res, next) => {
     //   return next(new ErrorResponse("Already Registered", 404));
     // }
 
-    const cIndex = user.courses.findIndex((x) => x.course == courseId);
-    if (cIndex !== -1) {
-          res.json({
-            status: "success",
-            courseId: courseId,
-            level: user.courses[cIndex].modules[0].level,
-          });
-          return
-    }
+    // const cIndex = user.courses.findIndex((x) => x.course == courseId);
+    // if (cIndex != -1) {
+    //       res.json({
+    //         status: "success",
+    //         courseId: courseId,
+    //         level: user.courses[cIndex].modules[0].level,
+    //       });
+    //   return;
+    // }
 
     const course = await Course.findById(courseId).select("outline kt").populate({
       path: "kt",
@@ -553,7 +553,7 @@ export const submitKt = async (req, res, next) => {
     const ktlevel = await ktLogic(kt, course.kt);
     const klevel = ktlevel.level == "1" ? "easy" : ktlevel.level == "2" ? "medium" : "hard";
 
-
+    console.log(ktlevel)
     const accessMod = course.outline.courseStructure.map((item, index) => {
       if (index == 0) {
         return {
