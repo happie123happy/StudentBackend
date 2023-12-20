@@ -509,16 +509,16 @@ export const getArticles = async (req, res, next) => {
       return next(new ErrorResponse("submodule Not Found", 404));
     }
     
-    // if (submodule.articleLinks.length!=0) {
-    //   res.json({status:"success",data:submodule});
-    //   return;
-    // }
+    if (submodule.articleLinks.length!=0) {
+      res.json({status:"success",data:submodule});
+      return;
+    }
     
     const content = await getArticleAI(submodule.name);
     if (!content) {
       return next(new ErrorResponse("Content Not Found", 404));
     }
-    console.log(content)
+    // console.log(content)
 
     submodule.articleLinks = content.search_results
     await submodule.save();
@@ -728,6 +728,7 @@ export const getAnalytics = async (req, res, next) => {
     }
 
     const findCourseProgress = (modules) => {
+      console.log(modules)
       const modLen = modules.length;
       const isaccessable = modules.filter((item) => item.access);
       return (isaccessable.length/modLen)*100
@@ -736,7 +737,8 @@ export const getAnalytics = async (req, res, next) => {
 
     const coursesEnrolled = user.courses.length;
     const courseProgress = user.courses.map((item, i) => {
-      const coursePro = findCourseProgress(user.courses.modules);
+      // console.log(user)
+      const coursePro = findCourseProgress(item.modules);
       return {
         courseId: item.course,
         progress: coursePro

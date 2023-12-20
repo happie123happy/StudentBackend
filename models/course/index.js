@@ -99,7 +99,7 @@ const subModuleSchema = new Schema({
   articleLinks: [
     {
       title: String,
-      url: String,
+      link: String,
     },
   ],
 });
