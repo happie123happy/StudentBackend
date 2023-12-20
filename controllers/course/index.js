@@ -9,7 +9,7 @@ import {
 } from "../../models/course/index.js";
 import { Instructor, Student } from "../../models/student/index.js";
 import { ktLogic } from "../student/index.js";
-import { getArticleAI } from "./courseAi.js";
+import { getArticleAI, getYTAI } from "./courseAi.js";
 
 export const displayAllCourses = async (req, res, next) => {
   try {
@@ -403,8 +403,6 @@ export const getKt = async (req, res, next) => {
   }
 };
 
-
-
 export const getQt = async (req, res, next) => {
   try {
 
@@ -449,6 +447,39 @@ export const getQt = async (req, res, next) => {
   }
 };
 
+export const getYt = async (req, res, next) => {
+  try {
+
+    const submodule = await SubModule.findOne({
+      _id: req.params.id
+    })
+      .select(["_id","name", "ytLinks"]);
+    
+    
+    if (!submodule) {
+      return next(new ErrorResponse("submodule Not Found", 404));
+    }
+    
+    if (submodule.ytLinks.length!=0) {
+      res.json({status:"success",data:submodule});
+      return;
+    }
+    
+    const content = await getYTAI(submodule.name);
+    if (!content) {
+      return next(new ErrorResponse("Content Not Found", 404));
+    }
+
+    submodule.ytLinks = content
+    await submodule.save();
+  
+    res.json({status:"success",data:submodule});
+  } catch (error) {
+    next(error);
+  }
+
+};
+
 export const getArticles = async (req, res, next) => {
   try {
 
@@ -473,10 +504,7 @@ export const getArticles = async (req, res, next) => {
     }
 
     submodule.articleLinks = content.search_results
-    // await submodule.save();
-
-    console.log(submodule.articleLinks);
-    console.log(content.search_results);
+    await submodule.save();
   
     res.json({status:"success",data:submodule});
   } catch (error) {
@@ -484,8 +512,6 @@ export const getArticles = async (req, res, next) => {
   }
 
 };
-
-
 
 export const submitKt = async (req, res, next) => {
   const { kt } = req.body;
@@ -577,8 +603,6 @@ export const submitKt = async (req, res, next) => {
   }
 
 };
-
-
 
 export const submitQt = async (req, res, next) => {
   const { qt } = req.body;

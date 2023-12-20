@@ -90,8 +90,18 @@ const subModuleSchema = new Schema({
     default: " ",
   },
   examples: [String],
-  ytLinks: [String],
-  articleLinks: [String],
+  ytLinks: [
+    {
+      title: String,
+      video_url: String,
+    },
+  ],
+  articleLinks: [
+    {
+      title: String,
+      url: String,
+    },
+  ],
 });
 
 const moduleSchema = new Schema({

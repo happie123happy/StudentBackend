@@ -2,6 +2,50 @@
 
 
 
+export const getExampleAI = async (course,submodule,target) => {
+  try {
+    // get course outline from AI
+    const resp = await fetch(process.env.AI_URL_EX, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+       course,submodule,target
+      })
+    });
+    // console.log(await resp.text());
+    const data = await resp.json();
+    console.log(data)
+    return data;
+  } catch (error) {
+    console.log("Error: ",error);
+  }
+};
+
+export const getYTAI = async (topic) => {
+  try {
+    // get course outline from AI
+    const resp = await fetch(process.env.AI_URL_YT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+
+      body: JSON.stringify({
+       topic
+      }),
+    });
+    // console.log(await resp.text());
+    const data = await resp.json();
+    console.log(data)
+    return data;
+  } catch (error) {
+    console.log("Error: ",error);
+  }
+};
+
 export const getArticleAI = async (topic) => {
   try {
     // get course outline from AI

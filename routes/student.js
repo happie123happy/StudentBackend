@@ -12,6 +12,7 @@ import {
   getCourses,
   getKt,
   getQt,
+  getYt,
   registerCourse,
   submitKt,
   submitQt
@@ -33,7 +34,7 @@ router.get("/getcourses", getCourses);
 router.get("/allcourses", getAllCourses);
 
 // get course details
-router.get("/getcoursedetails", getCourseDetails);
+router.get("/getcoursedetails/:courseId", getCourseDetails);
 
 // course register
 router.post("/registercourse", registerCourse);
@@ -46,6 +47,9 @@ router.post("/getcoursecontent/:courseId", getCourseContent);
 
 // get articles from course
 router.get("/getarticles/:id", getArticles);
+
+// get YTlinks from course
+router.get("/getyt/:id", getYt);
 
 // get kt from course
 router.get("/getkt/:courseId", getKt);
