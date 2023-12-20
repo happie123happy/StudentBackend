@@ -58,24 +58,24 @@ export const getCourseDetails = async (req, res, next) => {
       return next(new ErrorResponse("Course not found", 404));
     }
 
-    // const pcourse = await course.outline.populate({
-    //   path: "courseStructure",
-    //   populate: [
-    //     {
-    //       path: "subModules",
-    //       model: "SubModule",
-    //       select:"name"
-    //     },
-    //     {
-    //       path: "quizId",
-    //       model: "Quiz",
-    //       select:"name"
-    //     },
-    //   ],
-    // });
+    const pcourse = await course.outline.populate({
+      path: "courseStructure",
+      populate: [
+        {
+          path: "subModules",
+          model: "SubModule",
+          select:"name _id"
+        },
+        {
+          path: "quizId",
+          model: "Quiz",
+          select:"name _id"
+        },
+      ],
+    });
 
     // console.log(pcourse);
-    res.json({ status: "success", data: JSON.parse(course.dummyOutline) });
+    res.json({ status: "success", data: pcourse });
   } catch (error) {
     next(error);
   }
